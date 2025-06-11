@@ -1,0 +1,7 @@
+services:
+  notion-movie-metadata-updater:
+    image: ghcr.io/ehcaning/notion-movie-metadata-updater:latest
+    container_name: notion-movie-metadata-updater
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -10,7 +10,7 @@ class MovieMetadataUpdater:
     def __init__(self):
         load_dotenv()
         self.notion_db_id = os.getenv("NOTION_DB_ID")
-        self.page_size = os.getenv("NOTION_PAGE_SIZE", 20)
+        self.page_size = int(os.getenv("NOTION_PAGE_SIZE", 20))
         omdb_api_key = os.getenv("OMDB_API_KEY")
         notion_token = os.getenv("NOTION_TOKEN")
         self.notion = Client(auth=notion_token)
