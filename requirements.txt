@@ -1,0 +1,4 @@
+dotenv
+omdb
+notion-client
+tqdm
