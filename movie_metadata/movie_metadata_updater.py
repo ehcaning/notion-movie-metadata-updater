@@ -2,7 +2,6 @@ import os
 from notion_client import Client
 from omdb import OMDBClient
 from datetime import datetime
-from tqdm import tqdm
 from dotenv import load_dotenv
 from movie_metadata.metrics import (
     success_counter,
@@ -14,7 +13,7 @@ from movie_metadata.metrics import (
 
 
 class MovieMetadataUpdater:
-    def __init__(self):
+    def __init__(self, logger=None):
         load_dotenv()
         self.notion_db_id = os.getenv("NOTION_DB_ID")
         self.page_size = int(os.getenv("NOTION_PAGE_SIZE", 20))
@@ -22,19 +21,24 @@ class MovieMetadataUpdater:
         notion_token = os.getenv("NOTION_TOKEN")
         self.notion = Client(auth=notion_token)
         self.omdb_client = OMDBClient(apikey=omdb_api_key)
+        self.logger = logger
 
     def update_metadata(self):
         movies = self._fetch_notion_movies()
         fetch_gauge.set(len(movies))
-        for movie in tqdm(movies, desc="Processing movies"):
+        for movie in movies:
             imdb_id = movie["imdb_id"]
             page_id = movie["id"]
             with update_duration_histogram.time():
                 try:
                     movie_data = self.omdb_client.get(imdbid=imdb_id)
                     movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
-                    tqdm.write(
-                        f"Processing: {movie_clean.get('title', 'Unknown')} ({imdb_id})"
+                    self.logger.info(
+                        "Processing movie",
+                        extra={
+                            "title": movie_clean.get("title", "Unknown"),
+                            "imdb_id": imdb_id,
+                        },
                     )
                     cover = self._get_movie_cover(movie_clean)
                     properties = self._build_properties(movie_clean)
@@ -46,7 +50,11 @@ class MovieMetadataUpdater:
                         )
                     success_counter.inc()
                 except Exception as e:
-                    print(f"Error processing {imdb_id}: {e}")
+                    self.logger.error(
+                        "Error processing movie",
+                        exc_info=True,
+                        extra={"imdb_id": imdb_id, "error": str(e)},
+                    )
                     failure_counter.inc()
                 finally:
                     processed_counter.inc()
