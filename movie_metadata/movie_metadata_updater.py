@@ -4,7 +4,13 @@ from omdb import OMDBClient
 from datetime import datetime
 from tqdm import tqdm
 from dotenv import load_dotenv
-from movie_metadata.metrics import success_counter, failure_counter
+from movie_metadata.metrics import (
+    success_counter,
+    failure_counter,
+    processed_counter,
+    fetch_gauge,
+    update_duration_histogram,
+)
 
 
 class MovieMetadataUpdater:
@@ -19,27 +25,31 @@ class MovieMetadataUpdater:
 
     def update_metadata(self):
         movies = self._fetch_notion_movies()
+        fetch_gauge.set(len(movies))
         for movie in tqdm(movies, desc="Processing movies"):
             imdb_id = movie["imdb_id"]
             page_id = movie["id"]
-            try:
-                movie_data = self.omdb_client.get(imdbid=imdb_id)
-                movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
-                tqdm.write(
-                    f"Processing: {movie_clean.get('title', 'Unknown')} ({imdb_id})"
-                )
-                cover = self._get_movie_cover(movie_clean)
-                properties = self._build_properties(movie_clean)
-                if properties:
-                    self.notion.pages.update(
-                        page_id=page_id,
-                        properties=properties,
-                        icon=cover,
+            with update_duration_histogram.time():
+                try:
+                    movie_data = self.omdb_client.get(imdbid=imdb_id)
+                    movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
+                    tqdm.write(
+                        f"Processing: {movie_clean.get('title', 'Unknown')} ({imdb_id})"
                     )
-                success_counter.inc()
-            except Exception as e:
-                print(f"Error processing {imdb_id}: {e}")
-                failure_counter.inc()
+                    cover = self._get_movie_cover(movie_clean)
+                    properties = self._build_properties(movie_clean)
+                    if properties:
+                        self.notion.pages.update(
+                            page_id=page_id,
+                            properties=properties,
+                            icon=cover,
+                        )
+                    success_counter.inc()
+                except Exception as e:
+                    print(f"Error processing {imdb_id}: {e}")
+                    failure_counter.inc()
+                finally:
+                    processed_counter.inc()
 
     def _fetch_notion_movies(self):
         db = self.notion.databases.query(
