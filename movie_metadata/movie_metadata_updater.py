@@ -4,6 +4,7 @@ from omdb import OMDBClient
 from datetime import datetime
 from tqdm import tqdm
 from dotenv import load_dotenv
+from movie_metadata.metrics import success_counter, failure_counter
 
 
 class MovieMetadataUpdater:
@@ -35,8 +36,10 @@ class MovieMetadataUpdater:
                         properties=properties,
                         icon=cover,
                     )
+                success_counter.inc()
             except Exception as e:
                 print(f"Error processing {imdb_id}: {e}")
+                failure_counter.inc()
 
     def _fetch_notion_movies(self):
         db = self.notion.databases.query(

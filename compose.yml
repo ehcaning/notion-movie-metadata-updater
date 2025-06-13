@@ -4,4 +4,6 @@ services:
     container_name: notion-movie-metadata-updater
     env_file:
       - .env
+    ports:
+      - "8000:${METRICS_HTTP_PORT:-8000}"
     restart: unless-stopped
