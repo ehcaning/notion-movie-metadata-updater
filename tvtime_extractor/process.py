@@ -2,7 +2,7 @@ import json
 
 
 class TvTimeProcessor:
-    def __init__(self, json_file="tvtime_state.json"):
+    def __init__(self, json_file="json_data/tvtime_state.json"):
         self.json_file = json_file
 
     def _get_previous_state(self):

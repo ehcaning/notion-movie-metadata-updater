@@ -7,5 +7,5 @@ services:
     ports:
       - "8000:${METRICS_HTTP_PORT:-8000}"
     volumes:
-      - tvtime_state.json:./tvtime_state.json
+      - ./json_data:/app/json_data
     restart: unless-stopped
