@@ -75,6 +75,72 @@ class MovieMetadataUpdater:
                 results.append({"id": id, "imdb_id": imdb_id, "raw": rec})
         return results
 
+    def add_movie_by_imdb_id(self, imdb_id, details):
+        try:
+            movie_data = self.omdb_client.get(imdbid=imdb_id)
+            movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
+            self.logger.info(
+                "Adding movie",
+                extra={
+                    "title": movie_clean.get("title", "Unknown"),
+                    "imdb_id": imdb_id,
+                },
+            )
+            cover = self._get_movie_cover(movie_clean)
+            properties = self._build_properties(movie_clean)
+            watched_at = details.get("watched_at", None)
+            if watched_at:
+                properties["Watch Date"] = {"date": {"start": watched_at}}
+            rewatch_count = details.get("rewatch_count", 0)
+            if watched_at and rewatch_count >= 0:
+                properties["Watch Count"] = {"number": rewatch_count + 1}
+
+            if properties:
+                self.notion.pages.create(
+                    parent={"database_id": self.notion_db_id},
+                    properties=properties,
+                    icon=cover,
+                )
+                success_counter.inc()
+            else:
+                self.logger.warning(
+                    "No properties to add for movie",
+                    extra={
+                        "imdb_id": imdb_id,
+                        "title": movie_clean.get("title", "Unknown"),
+                    },
+                )
+        except Exception as e:
+            self.logger.error(
+                "Error adding movie",
+                exc_info=True,
+                extra={"imdb_id": imdb_id, "error": str(e)},
+            )
+            failure_counter.inc()
+
+    def update_movie_by_imdb_id(self, imdb_id, details):
+        page_id = None
+        db = self.notion.databases.query(
+            database_id=self.notion_db_id,
+            filter={"property": "IMDB ID", "rich_text": {"equals": imdb_id}},
+        )
+        if len(db["results"]) != 1:
+            self.logger.error(f"More than 1 record in database for {imdb_id}")
+        page_id = db["results"][0]["id"]
+
+        properties = {}
+        watched_at = details.get("watched_at", None)
+        if watched_at:
+            properties["Watch Date"] = {"date": {"start": watched_at}}
+        rewatch_count = details.get("rewatch_count", 0)
+        if watched_at and rewatch_count >= 0:
+            properties["Watch Count"] = {"number": rewatch_count + 1}
+        if properties:
+            self.notion.pages.update(
+                page_id=page_id,
+                properties=properties,
+            )
+
     def _build_properties(self, movie):
         properties = {}
 
