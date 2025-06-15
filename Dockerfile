@@ -1,13 +1,8 @@
 # syntax=docker/dockerfile:1
-FROM python:3.13-slim
+FROM python:3.13-alpine
 
 # Set work directory
 WORKDIR /app
-
-# Install system dependencies (if any needed for pip packages)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
 COPY requirements.txt ./
