@@ -12,9 +12,10 @@ X_API_Key = "LhqxB7GE9a95beFHqiNC85GHdrX8hNi34H2uQ7QG"
 
 
 class TVTimeExtractor:
-    def __init__(self):
+    def __init__(self, logger=None):
         self.username = os.getenv("TVTIME_USERNAME")
         self.password = os.getenv("TVTIME_PASSWORD")
+        self.logger = logger
 
     def get_moveis(self):
         tvst_access_token, user_id = self._login()

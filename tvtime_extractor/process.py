@@ -2,15 +2,16 @@ import json
 
 
 class TvTimeProcessor:
-    def __init__(self, json_file="json_data/tvtime_state.json"):
+    def __init__(self, json_file="json_data/tvtime_state.json", logger=None):
         self.json_file = json_file
+        self.logger = logger
 
     def _get_previous_state(self):
         try:
             with open(self.json_file, "r") as file:
                 return json.load(file)
         except:
-            print(f"Could not read previous state from {self.json_file}")
+            self.logger.info(f"Could not read previous state from {self.json_file}")
             return {}
 
     def _save_current_state(self, converted_data):

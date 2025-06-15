@@ -6,21 +6,35 @@ import os
 from log_config import setup_logger
 
 if __name__ == "__main__":
-    logger = setup_logger()
     # Start Prometheus metrics server
     start_http_server(int(os.getenv("METRICS_HTTP_PORT", 8000)))
 
-    updater = MovieMetadataUpdater(logger=logger)
     sleepTime = int(os.getenv("SLEEP_TIME", 3600))
     while True:
         try:
-            extractor = TVTimeExtractor()
+            logger = setup_logger(name="sync_movies_logger")
+            updater = MovieMetadataUpdater(logger=logger)
+            extractor = TVTimeExtractor(logger=logger)
             movies = extractor.get_moveis()
-            changes = TvTimeProcessor().get_latest_changes(movies)
+            changes = TvTimeProcessor(logger=logger).get_latest_changes(movies)
             for imdb_id, data in changes.items():
                 if data.get("new"):
+                    logger.info(
+                        "Adding new movie",
+                        extra={
+                            "imdb_id": imdb_id,
+                            "movie": data.get("name"),
+                        },
+                    )
                     updater.add_movie_by_imdb_id(imdb_id, data)
                 if data.get("updated"):
+                    logger.info(
+                        "Updating movie",
+                        extra={
+                            "imdb_id": imdb_id,
+                            "movie": data.get("name"),
+                        },
+                    )
                     updater.update_movie_by_imdb_id(imdb_id, data)
 
         except Exception as e:
@@ -28,6 +42,8 @@ if __name__ == "__main__":
                 "Error in fetching movies", exc_info=True, extra={"error": str(e)}
             )
         try:
+            logger = setup_logger(name="update_movies_logger")
+            updater = MovieMetadataUpdater(logger=logger)
             updater.update_metadata()
         except Exception as e:
             logger.error(
