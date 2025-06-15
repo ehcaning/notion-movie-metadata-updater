@@ -4,3 +4,5 @@ notion-client
 tqdm
 prometheus_client
 python-json-logger
+fastapi
+uvicorn

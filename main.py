@@ -4,12 +4,18 @@ from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 from time import sleep
 import os
 from log_config import setup_logger
+from server import run_server
+import threading
+from dotenv import load_dotenv
 
 if __name__ == "__main__":
-    # Start Prometheus metrics server
+    load_dotenv()
+    sleepTime = int(os.getenv("SLEEP_TIME", 3600))
+
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
     start_http_server(int(os.getenv("METRICS_HTTP_PORT", 8000)))
 
-    sleepTime = int(os.getenv("SLEEP_TIME", 3600))
     while True:
         try:
             logger = setup_logger(name="sync_movies_logger")
@@ -19,22 +25,8 @@ if __name__ == "__main__":
             changes = TvTimeProcessor(logger=logger).get_latest_changes(movies)
             for imdb_id, data in changes.items():
                 if data.get("new"):
-                    logger.info(
-                        "Adding new movie",
-                        extra={
-                            "imdb_id": imdb_id,
-                            "movie": data.get("name"),
-                        },
-                    )
                     updater.add_movie_by_imdb_id(imdb_id, data)
                 if data.get("updated"):
-                    logger.info(
-                        "Updating movie",
-                        extra={
-                            "imdb_id": imdb_id,
-                            "movie": data.get("name"),
-                        },
-                    )
                     updater.update_movie_by_imdb_id(imdb_id, data)
 
         except Exception as e:

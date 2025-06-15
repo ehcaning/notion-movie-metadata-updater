@@ -2,7 +2,6 @@ import os
 from notion_client import Client
 from omdb import OMDBClient
 from datetime import datetime
-from dotenv import load_dotenv
 from movie_metadata.metrics import (
     success_counter,
     failure_counter,
@@ -14,7 +13,6 @@ from movie_metadata.metrics import (
 
 class MovieMetadataUpdater:
     def __init__(self, logger=None):
-        load_dotenv()
         self.notion_db_id = os.getenv("NOTION_DB_ID")
         self.page_size = int(os.getenv("NOTION_PAGE_SIZE", 20))
         omdb_api_key = os.getenv("OMDB_API_KEY")
@@ -80,7 +78,7 @@ class MovieMetadataUpdater:
             movie_data = self.omdb_client.get(imdbid=imdb_id)
             movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
             self.logger.info(
-                "Adding movie",
+                "Adding new movie",
                 extra={
                     "title": movie_clean.get("title", "Unknown"),
                     "imdb_id": imdb_id,
@@ -118,6 +116,49 @@ class MovieMetadataUpdater:
             )
             failure_counter.inc()
 
+    def update_movie_metadata_by_imdb_id(self, imdb_id):
+        try:
+            db = self.notion.databases.query(
+                database_id=self.notion_db_id,
+                filter={"property": "IMDB ID", "rich_text": {"equals": imdb_id}},
+            )
+            if len(db["results"]) != 1:
+                self.logger.error(f"More than 1 record in database for {imdb_id}")
+            page_id = db["results"][0]["id"]
+
+            movie_data = self.omdb_client.get(imdbid=imdb_id)
+            movie_clean = {k: v for k, v in movie_data.items() if v != "N/A"}
+            self.logger.info(
+                "Updating movie metadata",
+                extra={
+                    "title": movie_clean.get("title", "Unknown"),
+                    "imdb_id": imdb_id,
+                },
+            )
+            cover = self._get_movie_cover(movie_clean)
+            properties = self._build_properties(movie_clean)
+
+            if properties:
+                self.notion.pages.update(
+                    page_id=page_id,
+                    properties=properties,
+                    icon=cover,
+                )
+            else:
+                self.logger.warning(
+                    "No properties to add for movie",
+                    extra={
+                        "imdb_id": imdb_id,
+                        "title": movie_clean.get("title", "Unknown!"),
+                    },
+                )
+        except Exception as e:
+            self.logger.error(
+                "Error updating movie metadata",
+                exc_info=True,
+                extra={"imdb_id": imdb_id, "error": str(e)},
+            )
+
     def update_movie_by_imdb_id(self, imdb_id, details):
         page_id = None
         db = self.notion.databases.query(
@@ -140,6 +181,12 @@ class MovieMetadataUpdater:
                 page_id=page_id,
                 properties=properties,
             )
+        self.logger.info(
+            "Updating movie",
+            extra={
+                "imdb_id": imdb_id,
+            },
+        )
 
     def _build_properties(self, movie):
         properties = {}

@@ -1,8 +1,5 @@
 import requests
 import os
-import dotenv
-
-dotenv.load_dotenv()
 
 # non-sensitive information
 USER_AGENT = "TVTime for iOS 8.44.0-202208302674-prod"
