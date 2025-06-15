@@ -28,8 +28,21 @@ def create_app():
             raise HTTPException(status_code=403, detail="Invalid token")
         return token
 
-    @app.get("/update-metadata")
-    def update_metadata_endpoint(imdb_id: str, token: str = Depends(get_token)):
+    @app.post("/update-metadata")
+    async def update_metadata_endpoint(
+        request: Request, token: str = Depends(get_token)
+    ):
+        body = await request.json()
+        try:
+            imdb_id = body["data"]["properties"]["IMDB ID"]["rich_text"][0][
+                "plain_text"
+            ]
+
+        except (KeyError, IndexError, TypeError) as e:
+            logger.warning("Invalid request body structure", extra={"error": str(e)})
+            raise HTTPException(
+                status_code=400, detail="Invalid request body structure"
+            )
         updater = MovieMetadataUpdater(logger=logger)
         try:
             updater.update_movie_metadata_by_imdb_id(imdb_id)
