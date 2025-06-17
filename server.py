@@ -4,6 +4,7 @@ import uvicorn
 import os
 from log_config import setup_logger
 from movie_metadata import MovieMetadataUpdater
+from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 
 # Create a custom logger for the server
 logger = setup_logger(name="server_logger")
@@ -55,6 +56,29 @@ def create_app():
                 extra={"error": str(e)},
             )
             raise HTTPException(status_code=500, detail="Failed to update metadata")
+
+    @app.post("/update-list")
+    async def update_list_endpoint(request: Request, token: str = Depends(get_token)):
+        try:
+            updater = MovieMetadataUpdater(logger=logger)
+            extractor = TVTimeExtractor(logger=logger)
+            movies = extractor.get_moveis()
+            changes = TvTimeProcessor(logger=logger).get_latest_changes(movies)
+            for imdb_id, data in changes.items():
+                if data.get("new"):
+                    updater.add_movie_by_imdb_id(imdb_id, data)
+                if data.get("updated"):
+                    updater.update_movie_by_imdb_id(imdb_id, data)
+
+            logger.info(f"Successfully updated movies list")
+            return JSONResponse({"status": "success"})
+        except Exception as e:
+            logger.error(
+                "API error in update_movie_by_imdb_id",
+                exc_info=True,
+                extra={"error": str(e)},
+            )
+            raise HTTPException(status_code=500, detail="Failed to update list")
 
     return app
 
