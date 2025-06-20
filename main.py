@@ -24,11 +24,13 @@ class TvtimeSync:
             extractor = TVTimeExtractor(logger=self.logger)
             movies = extractor.get_moveis()
             changes = TvTimeProcessor(logger=self.logger).get_latest_changes(movies)
+            if not changes:
+                self.logger.info("No new changes found in TVTime data")
+                return
+
             for imdb_id, data in changes.items():
-                if data.get("new"):
-                    updater.add_movie_by_imdb_id(imdb_id, data)
-                if data.get("updated"):
-                    updater.update_movie_by_imdb_id(imdb_id, data)
+                updater.upsert_movie_by_imdb_id(imdb_id, data)
+                updater.update_movie_metadata_by_imdb_id(imdb_id)
 
         except Exception as e:
             self.logger.error(
@@ -50,7 +52,7 @@ class MetadataUpdater:
 
         try:
             updater = MovieMetadataUpdater(logger=logger)
-            updater.bulk_update_metadata()
+            updater.bulk_update_movie_metadata()
         except Exception as e:
             self.logger.error(
                 "Error in update_metadata", exc_info=True, extra={"error": str(e)}
