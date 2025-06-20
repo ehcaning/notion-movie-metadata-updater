@@ -1,4 +1,4 @@
-from prometheus_client import start_http_server
+import prometheus_client
 from movie_metadata import MovieMetadataUpdater
 from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 from time import sleep
@@ -8,21 +8,22 @@ from server import run_server
 import threading
 from dotenv import load_dotenv
 
-if __name__ == "__main__":
-    load_dotenv()
-    sleepTime = int(os.getenv("SLEEP_TIME", 3600))
 
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
-    start_http_server(int(os.getenv("METRICS_HTTP_PORT", 8000)))
+class TvtimeSync:
+    def __init__(self):
+        self.disabled = os.getenv("TVTIME_SYNC_DISABLED", "false").lower() == "true"
+        self.logger = setup_logger(name="sync_movies_logger")
 
-    while True:
+    def sync(self):
+        if self.disabled:
+            self.logger.info("TVTime sync is disabled, skipping TVTime movie sync")
+            return
+
         try:
-            logger = setup_logger(name="sync_movies_logger")
-            updater = MovieMetadataUpdater(logger=logger)
-            extractor = TVTimeExtractor(logger=logger)
+            updater = MovieMetadataUpdater(logger=self.logger)
+            extractor = TVTimeExtractor(logger=self.logger)
             movies = extractor.get_moveis()
-            changes = TvTimeProcessor(logger=logger).get_latest_changes(movies)
+            changes = TvTimeProcessor(logger=self.logger).get_latest_changes(movies)
             for imdb_id, data in changes.items():
                 if data.get("new"):
                     updater.add_movie_by_imdb_id(imdb_id, data)
@@ -30,17 +31,46 @@ if __name__ == "__main__":
                     updater.update_movie_by_imdb_id(imdb_id, data)
 
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "Error in fetching movies", exc_info=True, extra={"error": str(e)}
             )
+
+
+class MetadataUpdater:
+    def __init__(self):
+        self.disabled = (
+            os.getenv("METADATA_UPDATER_DISABLED", "false").lower() == "true"
+        )
+        self.logger = setup_logger(name="update_movies_logger")
+
+    def update(self):
+        if self.disabled:
+            self.logger.info("Metadata updater is disabled, skipping metadata update")
+            return
+
         try:
-            logger = setup_logger(name="update_movies_logger")
             updater = MovieMetadataUpdater(logger=logger)
-            updater.update_metadata()
+            updater.bulk_update_metadata()
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "Error in update_metadata", exc_info=True, extra={"error": str(e)}
             )
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    sleepTime = int(os.getenv("SLEEP_TIME", 3600))
+    logger = setup_logger(name="main_logger")
+
+    prometheus_client.start_http_server(int(os.getenv("METRICS_HTTP_PORT", 8000)))
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+
+    tvtime_sync = TvtimeSync()
+    metadata_updater = MetadataUpdater()
+    while True:
+        tvtime_sync.sync()
+        metadata_updater.update()
 
         logger.info("Sleeping", extra={"sleepTime": sleepTime})
         sleep(sleepTime)

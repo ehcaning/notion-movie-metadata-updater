@@ -6,6 +6,7 @@ services:
       - .env
     ports:
       - "8000:${METRICS_HTTP_PORT:-8000}"
+      - "8001:${API_HTTP_PORT:-8001}"
     volumes:
       - ./json_data:/app/json_data
     restart: unless-stopped
