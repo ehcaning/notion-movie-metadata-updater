@@ -51,7 +51,7 @@ class MetadataUpdater:
             return
 
         try:
-            updater = MovieMetadataUpdater(logger=logger)
+            updater = MovieMetadataUpdater(logger=self.logger)
             updater.bulk_update_movie_metadata()
         except Exception as e:
             self.logger.error(
