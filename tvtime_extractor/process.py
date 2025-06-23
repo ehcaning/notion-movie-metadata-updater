@@ -49,11 +49,9 @@ class TvTimeProcessor:
                     "rewatch_count": current_info.get("rewatch_count"),
                     "new": True,
                 }
-            elif current_info.get("watched_at") != previous_info.get(
-                "watched_at"
-            ) or current_info.get("rewatch_count") != previous_info.get(
+            elif current_info.get("watched_at") != previous_info.get("watched_at") or current_info.get(
                 "rewatch_count"
-            ):
+            ) != previous_info.get("rewatch_count"):
                 changes[imdb_id] = {
                     "name": current_info.get("name"),
                     "watched_at": current_info.get("watched_at"),

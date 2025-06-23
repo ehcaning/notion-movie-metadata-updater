@@ -40,9 +40,7 @@ class MovieMetadataUpdater:
                 properties = self._build_properties(movie_data)
 
                 if not properties:
-                    raise ValueError(
-                        f"No properties to update movie metadata, IMDB ID: {imdb_id}"
-                    )
+                    raise ValueError(f"No properties to update movie metadata, IMDB ID: {imdb_id}")
 
                 self.logger.info(
                     "Updating movie metadata",
@@ -79,9 +77,7 @@ class MovieMetadataUpdater:
                 self.logger.debug(f"Creating movie with IMDB ID: {imdb_id}")
                 self.notion.pages.create(
                     parent={"database_id": self.notion_db_id},
-                    properties={
-                        "IMDB ID": {"rich_text": [{"text": {"content": imdb_id}}]}
-                    },
+                    properties={"IMDB ID": {"rich_text": [{"text": {"content": imdb_id}}]}},
                 )
 
             properties = {}
@@ -92,9 +88,7 @@ class MovieMetadataUpdater:
                 properties["Watch Count"] = {"number": rewatch_count + 1}
 
             if not properties:
-                raise ValueError(
-                    "No properties to upsert movie, IMDB ID: {}".format(imdb_id)
-                )
+                raise ValueError("No properties to upsert movie, IMDB ID: {}".format(imdb_id))
 
             self.notion.pages.update(
                 page_id=notion_page_id,
@@ -131,9 +125,7 @@ class MovieMetadataUpdater:
         properties = {}
 
         if "imdb_id" in movie and movie["imdb_id"]:
-            properties["IMDB ID"] = {
-                "rich_text": [{"text": {"content": movie["imdb_id"]}}]
-            }
+            properties["IMDB ID"] = {"rich_text": [{"text": {"content": movie["imdb_id"]}}]}
         if "title" in movie and movie["title"]:
             properties["Name"] = {"title": [{"text": {"content": movie["title"]}}]}
         if "year" in movie and movie["year"]:
@@ -143,17 +135,13 @@ class MovieMetadataUpdater:
                 pass
         if "imdb_votes" in movie and movie["imdb_votes"]:
             try:
-                properties["IMDB Voters"] = {
-                    "number": float(movie["imdb_votes"].replace(",", ""))
-                }
+                properties["IMDB Voters"] = {"number": float(movie["imdb_votes"].replace(",", ""))}
             except Exception:
                 pass
         if "director" in movie and movie["director"]:
             directors = [d.strip() for d in movie["director"].split(",") if d.strip()]
             if directors:
-                properties["Director"] = {
-                    "multi_select": [{"name": d} for d in directors]
-                }
+                properties["Director"] = {"multi_select": [{"name": d} for d in directors]}
         if "genre" in movie and movie["genre"]:
             genres = [d.strip() for d in movie["genre"].split(",") if d.strip()]
             if genres:
@@ -169,34 +157,24 @@ class MovieMetadataUpdater:
         if "country" in movie and movie["country"]:
             countries = [d.strip() for d in movie["country"].split(",") if d.strip()]
             if countries:
-                properties["Country"] = {
-                    "multi_select": [{"name": d} for d in countries]
-                }
+                properties["Country"] = {"multi_select": [{"name": d} for d in countries]}
         if "language" in movie and movie["language"]:
             languages = [d.strip() for d in movie["language"].split(",") if d.strip()]
             if languages:
-                properties["Language"] = {
-                    "multi_select": [{"name": d} for d in languages]
-                }
+                properties["Language"] = {"multi_select": [{"name": d} for d in languages]}
         if "plot" in movie and movie["plot"]:
             properties["Plot"] = {"rich_text": [{"text": {"content": movie["plot"]}}]}
         if "rated" in movie and movie["rated"]:
             properties["Rated"] = {"select": {"name": movie["rated"]}}
         if "runtime" in movie and movie["runtime"]:
             try:
-                properties["Runtime (m)"] = {
-                    "number": float(movie["runtime"].replace(" min", ""))
-                }
+                properties["Runtime (m)"] = {"number": float(movie["runtime"].replace(" min", ""))}
             except Exception:
                 pass
         if "released" in movie and movie["released"]:
             try:
                 properties["Released"] = {
-                    "date": {
-                        "start": datetime.strptime(
-                            movie["released"], "%d %b %Y"
-                        ).strftime("%Y-%m-%d")
-                    }
+                    "date": {"start": datetime.strptime(movie["released"], "%d %b %Y").strftime("%Y-%m-%d")}
                 }
             except Exception:
                 pass
@@ -212,9 +190,7 @@ class MovieMetadataUpdater:
                 value = rating["value"]
                 if source == "Internet Movie Database":
                     try:
-                        properties["IMDB Rating"] = {
-                            "number": (float(value.split("/")[0]))
-                        }
+                        properties["IMDB Rating"] = {"number": (float(value.split("/")[0]))}
                     except Exception:
                         continue
                 elif source == "Rotten Tomatoes":
@@ -246,9 +222,7 @@ class MovieMetadataUpdater:
             self.logger.error(f"No record found in database for {imdb_id}")
             return None
         if len(db["results"]) != 1:
-            self.logger.error(
-                f"More than 1 record in database for {imdb_id}, picking first"
-            )
+            self.logger.error(f"More than 1 record in database for {imdb_id}, picking first")
         return db["results"][0]["id"]
 
     def _get_movie_data(self, imdb_id):

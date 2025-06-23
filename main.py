@@ -34,15 +34,15 @@ class TvtimeSync:
 
         except Exception as e:
             self.logger.error(
-                "Error in fetching movies", exc_info=True, extra={"error": str(e)}
+                "Error in fetching movies",
+                exc_info=True,
+                extra={"error": str(e)},
             )
 
 
 class MetadataUpdater:
     def __init__(self):
-        self.disabled = (
-            os.getenv("METADATA_UPDATER_DISABLED", "false").lower() == "true"
-        )
+        self.disabled = os.getenv("METADATA_UPDATER_DISABLED", "false").lower() == "true"
         self.logger = setup_logger(name="update_movies_logger")
 
     def update(self):
@@ -55,7 +55,9 @@ class MetadataUpdater:
             updater.bulk_update_movie_metadata()
         except Exception as e:
             self.logger.error(
-                "Error in update_metadata", exc_info=True, extra={"error": str(e)}
+                "Error in update_metadata",
+                exc_info=True,
+                extra={"error": str(e)},
             )
 
 

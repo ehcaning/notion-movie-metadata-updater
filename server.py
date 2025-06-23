@@ -20,9 +20,7 @@ def create_app():
         auth = request.headers.get("Authorization")
         if not auth or not auth.startswith("Bearer "):
             logger.warning("Missing or invalid Authorization header")
-            raise HTTPException(
-                status_code=401, detail="Missing or invalid Authorization header"
-            )
+            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
         token = auth.split(" ", 1)[1]
         if token != API_TOKEN:
             logger.warning("Invalid token provided")
@@ -30,20 +28,14 @@ def create_app():
         return token
 
     @app.post("/update-metadata")
-    async def update_metadata_endpoint(
-        request: Request, token: str = Depends(get_token)
-    ):
+    async def update_metadata_endpoint(request: Request, token: str = Depends(get_token)):
         body = await request.json()
         try:
-            imdb_id = body["data"]["properties"]["IMDB ID"]["rich_text"][0][
-                "plain_text"
-            ]
+            imdb_id = body["data"]["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
 
         except (KeyError, IndexError, TypeError) as e:
             logger.warning("Invalid request body structure", extra={"error": str(e)})
-            raise HTTPException(
-                status_code=400, detail="Invalid request body structure"
-            )
+            raise HTTPException(status_code=400, detail="Invalid request body structure")
         updater = MovieMetadataUpdater(logger=logger)
         try:
             updater.update_movie_metadata_by_imdb_id(imdb_id)
