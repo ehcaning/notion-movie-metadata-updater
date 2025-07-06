@@ -58,6 +58,7 @@ def create_app():
             changes = TvTimeProcessor(logger=logger).get_latest_changes(movies)
             for imdb_id, data in changes.items():
                 updater.upsert_movie_by_imdb_id(imdb_id, data)
+                updater.update_movie_metadata_by_imdb_id(imdb_id)
 
             logger.info(f"Successfully updated movies list")
             return JSONResponse({"status": "success"})
