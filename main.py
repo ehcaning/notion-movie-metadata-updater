@@ -22,7 +22,7 @@ class TvtimeSync:
         try:
             updater = MovieMetadataUpdater(logger=self.logger)
             extractor = TVTimeExtractor(logger=self.logger)
-            movies = extractor.get_moveis()
+            movies = extractor.get_movies()
             changes = TvTimeProcessor(logger=self.logger).get_latest_changes(movies)
             if not changes:
                 self.logger.info("No new changes found in TVTime data")

@@ -14,7 +14,7 @@ class TVTimeExtractor:
         self.password = os.getenv("TVTIME_PASSWORD")
         self.logger = logger
 
-    def get_moveis(self):
+    def get_movies(self):
         tvst_access_token, user_id = self._login()
         url = f"https://msapi.tvtime.com/prod/v1/tracking/cgw/follows/user/{user_id}?app_version=8.44.0&entity_type=movie&sort=watched_date,desc"
         headers = {
