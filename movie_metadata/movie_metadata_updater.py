@@ -1,4 +1,4 @@
-import os
+from config import NOTION_DB_ID, NOTION_PAGE_SIZE, OMDB_API_KEY, NOTION_TOKEN
 from notion_client import Client
 from omdb import OMDBClient
 from datetime import datetime
@@ -13,12 +13,10 @@ from movie_metadata.metrics import (
 
 class MovieMetadataUpdater:
     def __init__(self, logger=None):
-        self.notion_db_id = os.getenv("NOTION_DB_ID")
-        self.page_size = int(os.getenv("NOTION_PAGE_SIZE", 20))
-        omdb_api_key = os.getenv("OMDB_API_KEY")
-        notion_token = os.getenv("NOTION_TOKEN")
-        self.notion = Client(auth=notion_token)
-        self.omdb_client = OMDBClient(apikey=omdb_api_key)
+        self.notion_db_id = NOTION_DB_ID
+        self.page_size = NOTION_PAGE_SIZE
+        self.notion = Client(auth=NOTION_TOKEN)
+        self.omdb_client = OMDBClient(apikey=OMDB_API_KEY)
         self.logger = logger
 
     def bulk_update_movie_metadata(self):

@@ -2,16 +2,15 @@ import prometheus_client
 from movie_metadata import MovieMetadataUpdater
 from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 from time import sleep
-import os
+import threading
 from log_config import setup_logger
 from server import run_server
-import threading
-from dotenv import load_dotenv
+from config import SLEEP_TIME, METRICS_HTTP_PORT, TVTIME_SYNC_DISABLED, METADATA_UPDATER_DISABLED
 
 
-class TvtimeSync:
+class TvTimeSync:
     def __init__(self):
-        self.disabled = os.getenv("TVTIME_SYNC_DISABLED", "false").lower() == "true"
+        self.disabled = TVTIME_SYNC_DISABLED
         self.logger = setup_logger(name="sync_movies_logger")
 
     def sync(self):
@@ -42,7 +41,7 @@ class TvtimeSync:
 
 class MetadataUpdater:
     def __init__(self):
-        self.disabled = os.getenv("METADATA_UPDATER_DISABLED", "false").lower() == "true"
+        self.disabled = METADATA_UPDATER_DISABLED
         self.logger = setup_logger(name="update_movies_logger")
 
     def update(self):
@@ -62,19 +61,17 @@ class MetadataUpdater:
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    sleepTime = int(os.getenv("SLEEP_TIME", 3600))
     logger = setup_logger(name="main_logger")
 
-    prometheus_client.start_http_server(int(os.getenv("METRICS_HTTP_PORT", 8000)))
+    prometheus_client.start_http_server(METRICS_HTTP_PORT)
     server_thread = threading.Thread(target=run_server, daemon=True)
     server_thread.start()
 
-    tvtime_sync = TvtimeSync()
+    tvtime_sync = TvTimeSync()
     metadata_updater = MetadataUpdater()
     while True:
         tvtime_sync.sync()
         metadata_updater.update()
 
-        logger.info("Sleeping", extra={"sleepTime": sleepTime})
-        sleep(sleepTime)
+        logger.info("Sleeping", extra={"sleepTime": SLEEP_TIME})
+        sleep(SLEEP_TIME)

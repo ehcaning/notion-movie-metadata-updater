@@ -1,19 +1,14 @@
 from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import uvicorn
-import os
 from log_config import setup_logger
 from movie_metadata import MovieMetadataUpdater
 from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
-
-# Create a custom logger for the server
-logger = setup_logger(name="server_logger")
-
-API_HTTP_PORT = int(os.getenv("API_HTTP_PORT", 8001))
+from config import API_HTTP_PORT, API_TOKEN
 
 
 def create_app():
-    API_TOKEN = os.getenv("API_TOKEN")
+    logger = setup_logger(name="server_logger")
     app = FastAPI()
 
     def get_token(request: Request):

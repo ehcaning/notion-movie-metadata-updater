@@ -1,5 +1,5 @@
 import requests
-import os
+from config import TVTIME_USERNAME, TVTIME_PASSWORD
 
 # non-sensitive information
 USER_AGENT = "TVTime for iOS 8.44.0-202208302674-prod"
@@ -10,8 +10,8 @@ X_API_Key = "LhqxB7GE9a95beFHqiNC85GHdrX8hNi34H2uQ7QG"
 
 class TVTimeExtractor:
     def __init__(self, logger=None):
-        self.username = os.getenv("TVTIME_USERNAME")
-        self.password = os.getenv("TVTIME_PASSWORD")
+        self.username = TVTIME_USERNAME
+        self.password = TVTIME_PASSWORD
         self.logger = logger
 
     def get_movies(self):
