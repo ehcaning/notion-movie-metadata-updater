@@ -11,7 +11,7 @@ pip install -r requirements.txt
 Then, run the tests using:
 
 ```sh
-python -m unittest discover -s tests
+python -m unittest discover -v -s . -p "*_test.py"
 ```
 
-This will automatically discover and run all tests in the `tests/` directory.
+This will automatically discover and run all tests.
