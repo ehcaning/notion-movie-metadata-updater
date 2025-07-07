@@ -1,36 +1,20 @@
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
-import uvicorn
-from log_config import setup_logger
+from .auth import get_token
 from movie_metadata import MovieMetadataUpdater
 from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
-from config import API_HTTP_PORT, API_TOKEN
+from http import HTTPStatus
 
 
-def create_app():
-    logger = setup_logger(name="server_logger")
-    app = FastAPI()
-
-    def get_token(request: Request):
-        auth = request.headers.get("Authorization")
-        if not auth or not auth.startswith("Bearer "):
-            logger.warning("Missing or invalid Authorization header")
-            raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
-        token = auth.split(" ", 1)[1]
-        if token != API_TOKEN:
-            logger.warning("Invalid token provided")
-            raise HTTPException(status_code=403, detail="Invalid token")
-        return token
-
+def register_routes(app, logger):
     @app.post("/update-metadata")
     async def update_metadata_endpoint(request: Request, token: str = Depends(get_token)):
         body = await request.json()
         try:
             imdb_id = body["data"]["properties"]["IMDB ID"]["rich_text"][0]["plain_text"]
-
         except (KeyError, IndexError, TypeError) as e:
             logger.warning("Invalid request body structure", extra={"error": str(e)})
-            raise HTTPException(status_code=400, detail="Invalid request body structure")
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid request body structure")
         updater = MovieMetadataUpdater(logger=logger)
         try:
             updater.update_movie_metadata_by_imdb_id(imdb_id)
@@ -42,7 +26,7 @@ def create_app():
                 exc_info=True,
                 extra={"error": str(e)},
             )
-            raise HTTPException(status_code=500, detail="Failed to update metadata")
+            raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail="Failed to update metadata")
 
     @app.post("/update-list")
     async def update_list_endpoint(request: Request, token: str = Depends(get_token)):
@@ -63,11 +47,4 @@ def create_app():
                 exc_info=True,
                 extra={"error": str(e)},
             )
-            raise HTTPException(status_code=500, detail="Failed to update list")
-
-    return app
-
-
-def run_server():
-    app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=API_HTTP_PORT, log_level="info")
+            raise HTTPException(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail="Failed to update list")

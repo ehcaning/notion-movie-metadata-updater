@@ -4,7 +4,7 @@ from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 from time import sleep
 import threading
 from log_config import setup_logger
-from server import run_server
+from api import run_server
 from config import SLEEP_TIME, METRICS_HTTP_PORT, TVTIME_SYNC_DISABLED, METADATA_UPDATER_DISABLED
 
 
