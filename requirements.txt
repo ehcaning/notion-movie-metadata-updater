@@ -1,6 +1,6 @@
 dotenv
 omdb
-notion-client
+notion-client==2.3.0
 tqdm
 prometheus_client
 python-json-logger
