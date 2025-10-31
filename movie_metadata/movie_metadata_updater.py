@@ -2,6 +2,7 @@ from config import NOTION_DB_ID, NOTION_PAGE_SIZE, OMDB_API_KEY, NOTION_TOKEN
 from notion_client import Client
 from omdb import OMDBClient
 from datetime import datetime
+from logging import Logger
 from movie_metadata.metrics import (
     success_counter,
     failure_counter,
@@ -12,12 +13,12 @@ from movie_metadata.metrics import (
 
 
 class MovieMetadataUpdater:
-    def __init__(self, logger=None):
+    def __init__(self, logger: Logger):
         self.notion_db_id = NOTION_DB_ID
         self.page_size = NOTION_PAGE_SIZE
         self.notion = Client(auth=NOTION_TOKEN)
         self.omdb_client = OMDBClient(apikey=OMDB_API_KEY)
-        self.logger = logger
+        self.logger: Logger = logger
 
     def bulk_update_movie_metadata(self):
         notion_movie_records = self._fetch_notion_movies()
@@ -29,7 +30,6 @@ class MovieMetadataUpdater:
     def update_movie_metadata_by_imdb_id(self, imdb_id):
         with update_duration_histogram.time():
             try:
-
                 notion_page_id = self._get_notion_page_id_by_imdb_id(imdb_id)
                 if not notion_page_id:
                     raise ValueError(f"No Notion page found for IMDB ID: {imdb_id}")
@@ -77,6 +77,7 @@ class MovieMetadataUpdater:
                     parent={"database_id": self.notion_db_id},
                     properties={"IMDB ID": {"rich_text": [{"text": {"content": imdb_id}}]}},
                 )
+                notion_page_id = self._get_notion_page_id_by_imdb_id(imdb_id)
 
             properties = {}
             watched_at = details.get("watched_at", None)
@@ -220,7 +221,7 @@ class MovieMetadataUpdater:
             self.logger.error(f"No record found in database for {imdb_id}")
             return None
         if len(db["results"]) != 1:
-            self.logger.error(f"More than 1 record in database for {imdb_id}, picking first")
+            self.logger.warning(f"More than 1 record in database for {imdb_id}, picking first")
         return db["results"][0]["id"]
 
     def _get_movie_data(self, imdb_id):

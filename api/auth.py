@@ -3,7 +3,7 @@ from log_config import setup_logger
 from config import API_TOKEN
 from http import HTTPStatus
 
-logger = setup_logger(name="auth_logger")
+logger = setup_logger(name="server_logger")
 
 
 def get_token(request: Request):

@@ -4,9 +4,10 @@ from .auth import get_token
 from movie_metadata import MovieMetadataUpdater
 from tvtime_extractor import TvTimeProcessor, TVTimeExtractor
 from http import HTTPStatus
+from logging import Logger
 
 
-def register_routes(app, logger):
+def register_routes(app, logger: Logger):
     @app.post("/update-metadata")
     async def update_metadata_endpoint(request: Request, token: str = Depends(get_token)):
         body = await request.json()

@@ -1,10 +1,11 @@
 import json
+from logging import Logger
 
 
 class TvTimeProcessor:
-    def __init__(self, json_file="json_data/tvtime_state.json", logger=None):
+    def __init__(self, json_file="json_data/tvtime_state.json", logger: Logger = None):
         self.json_file = json_file
-        self.logger = logger
+        self.logger: Logger = logger
 
     def _get_previous_state(self):
         try:
